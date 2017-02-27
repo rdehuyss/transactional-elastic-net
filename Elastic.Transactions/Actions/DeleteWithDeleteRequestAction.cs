@@ -11,9 +11,9 @@ namespace Elastic.Transactions.Actions
             _indexRequest = indexRequest;
         }
 
-        public override void Commit(ElasticClient client)
+        public override IResponse Commit(ElasticClient client)
         {
-            Delete(client);
+            return Delete(client);
         }
 
         public IDeleteResponse TestWithInMemoryClient(ElasticClient inMemoryClient)

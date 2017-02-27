@@ -17,7 +17,7 @@ namespace Elastic.Transactions.Actions
             //nothing to do
         }
 
-        public abstract void Commit(ElasticClient client);
+        public abstract IResponse Commit(ElasticClient client);
 
         public void Rollback(ElasticClient client)
         {

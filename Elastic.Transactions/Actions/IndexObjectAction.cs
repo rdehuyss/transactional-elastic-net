@@ -16,9 +16,9 @@ namespace Elastic.Transactions.Actions
             _selector = selector;
         }
 
-        public override void Commit(ElasticClient client)
+        public override IResponse Commit(ElasticClient client)
         {
-            Index(client);
+            return Index(client);
         }
 
         public IIndexResponse TestWithInMemoryClient(ElasticClient inMemoryClient)

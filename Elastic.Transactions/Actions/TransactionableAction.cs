@@ -6,7 +6,7 @@ namespace Elastic.Transactions.Actions
     {
         void Prepare(ElasticClient client);
 
-        void Commit(ElasticClient client);
+        IResponse Commit(ElasticClient client);
 
         void Rollback(ElasticClient client);
     }

@@ -66,6 +66,7 @@
   <ItemGroup>
     <Compile Include="AbstractIntegrationTest.cs" />
     <Compile Include="TestObject.cs" />
+    <Compile Include="TransactionalElasticClientBulkIntegrationTest.cs" />
     <Compile Include="TransactionalElasticClientDeleteIntegrationTest.cs" />
     <Compile Include="TransactionalElasticClientIndexIntegrationTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

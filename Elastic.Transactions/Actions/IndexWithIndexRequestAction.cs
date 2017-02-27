@@ -12,9 +12,9 @@ namespace Elastic.Transactions.Actions
             _indexRequest = indexRequest;
         }
 
-        public override void Commit(ElasticClient client)
+        public override IResponse Commit(ElasticClient client)
         {
-            Index(client);
+            return Index(client);
         }
 
         public IIndexResponse TestWithInMemoryClient(ElasticClient inMemoryClient)

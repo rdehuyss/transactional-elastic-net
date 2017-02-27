@@ -80,6 +80,30 @@ namespace Elastic.Transactions
             return _client.Delete(document, selector);
         }
 
+        public IBulkResponse Bulk(IBulkRequest request)
+        {
+            if (InTransaction())
+            {
+                Transaction.Current.EnlistVolatile(this, EnlistmentOptions.None);
+                return new BulkWithBulkRequestAction(request)
+                    .AddToActions(Actions)
+                    .TestWithInMemoryClient(_inMemoryClient);
+            }
+            return _client.Bulk(request);
+        }
+
+        public IBulkResponse Bulk(Func<BulkDescriptor, IBulkRequest> selector = null)
+        {
+            if (InTransaction())
+            {
+                Transaction.Current.EnlistVolatile(this, EnlistmentOptions.None);
+                return new BulkWithBulkDescriptorAction(selector)
+                    .AddToActions(Actions)
+                    .TestWithInMemoryClient(_inMemoryClient);
+            }
+            return _client.Bulk(selector);
+        }
+
         public void Prepare(PreparingEnlistment preparingEnlistment)
         {
             if (!IsMinimumClusterHealthStatusAchieved())
@@ -122,17 +146,21 @@ namespace Elastic.Transactions
                 .WaitForStatus(_minimumStatus)
                 .Timeout(TimeSpan.FromSeconds(3)));
 
-            if (_minimumStatus == WaitForStatus.Green)
+            if (clusterHealthResponse.IsValid)
             {
-                return clusterHealthResponse.Status.Equals(WaitForStatus.Green.ToString(), StringComparison.InvariantCultureIgnoreCase);
-            }
+                if (_minimumStatus == WaitForStatus.Green)
+                {
+                    return clusterHealthResponse.Status.Equals(WaitForStatus.Green.ToString(), StringComparison.InvariantCultureIgnoreCase);
+                }
 
-            if (_minimumStatus == WaitForStatus.Yellow)
-            {
-                return clusterHealthResponse.Status.Equals(WaitForStatus.Green.ToString(), StringComparison.InvariantCultureIgnoreCase)
-                    || clusterHealthResponse.Status.Equals(WaitForStatus.Yellow.ToString(), StringComparison.InvariantCultureIgnoreCase);
+                if (_minimumStatus == WaitForStatus.Yellow)
+                {
+                    return clusterHealthResponse.Status.Equals(WaitForStatus.Green.ToString(), StringComparison.InvariantCultureIgnoreCase)
+                           || clusterHealthResponse.Status.Equals(WaitForStatus.Yellow.ToString(), StringComparison.InvariantCultureIgnoreCase);
+                }
+                return true;
             }
-            return true;
+            return false;
         }
     }
 }

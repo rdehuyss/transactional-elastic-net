@@ -13,6 +13,24 @@ namespace Elastic.Transactions.Test
     {
 
         [Test]
+        public void ActionsFromMultipleClientsAreCombined()
+        {
+            using (TransactionScope txSc = new TransactionScope())
+            {
+                TestTransactionalElasticClient client1 = new TestTransactionalElasticClient(ElasticClient);
+                TestTransactionalElasticClient client2 = new TestTransactionalElasticClient(ElasticClient);
+
+                client1.Index(new TestObject() {Id = "id1"});
+                client2.Index(new TestObject() {Id = "id2"});
+                client2.Delete<TestObject>("id1");
+
+                txSc.Complete();
+            }
+            ElasticClient.Get<TestObject>("id1").Source.Should().BeNull();
+            ElasticClient.Get<TestObject>("id2").Source.Should().NotBeNull();
+        }
+
+        [Test]
         public void ActionsAreThreadLocal()
         {
             using (TransactionScope txSc = new TransactionScope())

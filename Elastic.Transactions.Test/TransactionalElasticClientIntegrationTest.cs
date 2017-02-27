@@ -11,6 +11,33 @@ namespace Elastic.Transactions.Test
     [TestFixture]
     public class TransactionalElasticClientIntegrationTest : AbstractIntegrationTest
     {
+        [Test]
+        public void IfHealthStatusNotOk_Rollback()
+        {
+            ElasticClient.DeleteIndex(CurrentTestIndexName());
+            ElasticClient.CreateIndex(CurrentTestIndexName(),
+                idx => idx.Settings(ids => ids.NumberOfShards(1).NumberOfReplicas(1)));
+
+            ElasticClient.Index<TestObject>(new TestObject() {Id = "id1"});
+
+            Exception actualException = null;
+            try
+            {
+                using (TransactionScope txSc = new TransactionScope())
+                {
+                    TestTransactionalElasticClient client = new TestTransactionalElasticClient(ElasticClient);
+
+                    client.Index(new TestObject() {Id = "id2"});
+                    txSc.Complete();
+                }
+            }
+            catch (TransactionAbortedException e)
+            {
+                actualException = e;
+            }
+            actualException.Should().NotBeNull();
+            actualException.Should().BeOfType<TransactionAbortedException>();
+        }
 
         [Test]
         public void ActionsFromMultipleClientsAreCombined()

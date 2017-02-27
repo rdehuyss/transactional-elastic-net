@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Transactions;
 using Elastic.Transactions.Actions;
 using Elasticsearch.Net;
@@ -119,7 +120,13 @@ namespace Elastic.Transactions
 
         public void Commit(Enlistment enlistment)
         {
-            Actions.ForEach(action => action.Commit(_client));
+            var allActionsSucceeded = Actions
+                .Select(action => action.Commit(_client).IsValid)
+                .FirstOrDefault(result => result == false);
+            if (!allActionsSucceeded)
+            {
+                //todo? Log? Throw exception
+            }
             Actions.Clear();
         }
 

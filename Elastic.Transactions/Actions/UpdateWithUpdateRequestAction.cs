@@ -5,11 +5,13 @@ using Nest;
 
 namespace Elastic.Transactions.Actions
 {
-    public class UpdateWithUpdateRequestAction<TDocument> : AbstractTransactionableAction<UpdateWithUpdateRequestAction<TDocument>> where TDocument : class
+    public class UpdateWithUpdateRequestAction<TDocument, TPartialDocument> : AbstractTransactionableAction<UpdateWithUpdateRequestAction<TDocument, TPartialDocument>>
+        where TDocument : class
+        where TPartialDocument : class
     {
-        private readonly IUpdateRequest<TDocument, TDocument> _request;
+        private readonly IUpdateRequest<TDocument, TPartialDocument> _request;
 
-        public UpdateWithUpdateRequestAction(IUpdateRequest<TDocument, TDocument> request)
+        public UpdateWithUpdateRequestAction(IUpdateRequest<TDocument, TPartialDocument> request)
         {
             _request = request;
         }
@@ -26,15 +28,17 @@ namespace Elastic.Transactions.Actions
 
         private IUpdateResponse<TDocument> Update(ElasticClient client)
         {
-            return client.Update<TDocument>(_request);
+            return client.Update(_request);
         }
     }
 
-    public class UpdateWithUpdateRequestAsyncAction<TDocument> : AbstractTransactionableAsyncAction<UpdateWithUpdateRequestAsyncAction<TDocument>> where TDocument : class
+    public class UpdateWithUpdateRequestAsyncAction<TDocument, TPartialDocument> : AbstractTransactionableAsyncAction<UpdateWithUpdateRequestAsyncAction<TDocument, TPartialDocument>>
+        where TDocument : class
+        where TPartialDocument : class
     {
-        private readonly IUpdateRequest<TDocument, TDocument> _request;
+        private readonly IUpdateRequest<TDocument, TPartialDocument> _request;
 
-        public UpdateWithUpdateRequestAsyncAction(IUpdateRequest<TDocument, TDocument> request)
+        public UpdateWithUpdateRequestAsyncAction(IUpdateRequest<TDocument, TPartialDocument> request)
         {
             _request = request;
         }
@@ -51,7 +55,7 @@ namespace Elastic.Transactions.Actions
 
         private Task<IUpdateResponse<TDocument>> Update(ElasticClient client)
         {
-            return client.UpdateAsync<TDocument>(_request);
+            return client.UpdateAsync(_request);
         }
     }
 }

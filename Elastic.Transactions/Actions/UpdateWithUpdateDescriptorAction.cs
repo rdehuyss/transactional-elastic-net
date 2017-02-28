@@ -5,12 +5,14 @@ using Nest;
 
 namespace Elastic.Transactions.Actions
 {
-    public class UpdateWithUpdateDescriptorAction<TDocument> : AbstractTransactionableAction<UpdateWithUpdateDescriptorAction<TDocument>> where TDocument : class
+    public class UpdateWithUpdateDescriptorAction<TDocument, TPartialDocument> : AbstractTransactionableAction<UpdateWithUpdateDescriptorAction<TDocument, TPartialDocument>>
+        where TDocument : class
+        where TPartialDocument : class
     {
         private readonly DocumentPath<TDocument> _documentPath;
-        private readonly Func<UpdateDescriptor<TDocument, TDocument>, IUpdateRequest<TDocument, TDocument>> _selector;
+        private readonly Func<UpdateDescriptor<TDocument, TPartialDocument>, IUpdateRequest<TDocument, TPartialDocument>> _selector;
 
-        public UpdateWithUpdateDescriptorAction(DocumentPath<TDocument> documentPath, Func<UpdateDescriptor<TDocument, TDocument>, IUpdateRequest<TDocument, TDocument>> selector)
+        public UpdateWithUpdateDescriptorAction(DocumentPath<TDocument> documentPath, Func<UpdateDescriptor<TDocument, TPartialDocument>, IUpdateRequest<TDocument, TPartialDocument>> selector)
         {
             _documentPath = documentPath;
             _selector = selector;
@@ -28,16 +30,18 @@ namespace Elastic.Transactions.Actions
 
         private IUpdateResponse<TDocument> Update(ElasticClient client)
         {
-            return client.Update<TDocument>(_documentPath, _selector);
+            return client.Update(_documentPath, _selector);
         }
     }
 
-    public class UpdateWithUpdateDescriptorAsyncAction<TDocument> : AbstractTransactionableAsyncAction<UpdateWithUpdateDescriptorAsyncAction<TDocument>> where TDocument : class
+    public class UpdateWithUpdateDescriptorAsyncAction<TDocument, TPartialDocument> : AbstractTransactionableAsyncAction<UpdateWithUpdateDescriptorAsyncAction<TDocument, TPartialDocument>>
+        where TDocument : class
+        where TPartialDocument : class
     {
         private readonly DocumentPath<TDocument> _documentPath;
-        private readonly Func<UpdateDescriptor<TDocument, TDocument>, IUpdateRequest<TDocument, TDocument>> _selector;
+        private readonly Func<UpdateDescriptor<TDocument, TPartialDocument>, IUpdateRequest<TDocument, TPartialDocument>> _selector;
 
-        public UpdateWithUpdateDescriptorAsyncAction(DocumentPath<TDocument> documentPath, Func<UpdateDescriptor<TDocument, TDocument>, IUpdateRequest<TDocument, TDocument>> selector)
+        public UpdateWithUpdateDescriptorAsyncAction(DocumentPath<TDocument> documentPath, Func<UpdateDescriptor<TDocument, TPartialDocument>, IUpdateRequest<TDocument, TPartialDocument>> selector)
         {
             _documentPath = documentPath;
             _selector = selector;
@@ -55,7 +59,7 @@ namespace Elastic.Transactions.Actions
 
         private Task<IUpdateResponse<TDocument>> Update(ElasticClient client)
         {
-            return client.UpdateAsync<TDocument>(_documentPath, _selector);
+            return client.UpdateAsync(_documentPath, _selector);
         }
     }
 }

@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Transactions;
 using Elastic.Transactions.Actions;
+using Elastic.Transactions.Infrastructure;
 using Elasticsearch.Net;
 using Nest;
 
@@ -16,6 +18,8 @@ namespace Elastic.Transactions
 
         [ThreadStatic]
         protected static List<ITransactionableAction> Actions;
+        [ThreadStatic]
+        protected static List<ITransactionableAsyncAction> AsyncActions;
 
         public TransactionalElasticClient(ElasticClient client) : this(client, WaitForStatus.Green)
         {
@@ -31,6 +35,7 @@ namespace Elastic.Transactions
                 .DefaultIndex(client.ConnectionSettings.DefaultIndex);
             _inMemoryClient = new ElasticClient(inMemoryConnectionSettings);
             Actions = new List<ITransactionableAction>();
+            AsyncActions = new List<ITransactionableAsyncAction>();
         }
 
         public IIndexResponse Index<T>(T theObject, Func<IndexDescriptor<T>, IIndexRequest> selector = null) where T : class
@@ -57,6 +62,30 @@ namespace Elastic.Transactions
             return _client.Index(request);
         }
 
+        public Task<IIndexResponse> IndexAsync<T>(T theObject, Func<IndexDescriptor<T>, IIndexRequest> selector = null) where T : class
+        {
+            if (InTransaction())
+            {
+                Transaction.Current.EnlistVolatile(this, EnlistmentOptions.None);
+                return new IndexObjectAsyncAction<T>(theObject, selector)
+                    .AddToActions(AsyncActions)
+                    .TestWithInMemoryClient(_inMemoryClient);
+            }
+            return _client.IndexAsync(theObject, selector);
+        }
+
+        public Task<IIndexResponse> IndexAsync(IIndexRequest request)
+        {
+            if (InTransaction())
+            {
+                Transaction.Current.EnlistVolatile(this, EnlistmentOptions.None);
+                return new IndexWithIndexRequestAsyncAction(request)
+                    .AddToActions(AsyncActions)
+                    .TestWithInMemoryClient(_inMemoryClient);
+            }
+            return _client.IndexAsync(request);
+        }
+
         public IDeleteResponse Delete(IDeleteRequest request)
         {
             if (InTransaction())
@@ -79,6 +108,30 @@ namespace Elastic.Transactions
                     .TestWithInMemoryClient(_inMemoryClient);
             }
             return _client.Delete(document, selector);
+        }
+
+        public Task<IDeleteResponse> DeleteAsync(IDeleteRequest request)
+        {
+            if (InTransaction())
+            {
+                Transaction.Current.EnlistVolatile(this, EnlistmentOptions.None);
+                return new DeleteWithDeleteRequestAsyncAction(request)
+                    .AddToActions(AsyncActions)
+                    .TestWithInMemoryClient(_inMemoryClient);
+            }
+            return _client.DeleteAsync(request);
+        }
+
+        public Task<IDeleteResponse> DeleteAsync<T>(DocumentPath<T> document, Func<DeleteDescriptor<T>, IDeleteRequest> selector = null) where T : class
+        {
+            if (InTransaction())
+            {
+                Transaction.Current.EnlistVolatile(this, EnlistmentOptions.None);
+                return new DeleteObjectAsyncAction<T>(document, selector)
+                    .AddToActions(AsyncActions)
+                    .TestWithInMemoryClient(_inMemoryClient);
+            }
+            return _client.DeleteAsync(document, selector);
         }
 
         public IBulkResponse Bulk(IBulkRequest request)
@@ -105,6 +158,30 @@ namespace Elastic.Transactions
             return _client.Bulk(selector);
         }
 
+        public Task<IBulkResponse> BulkAsync(IBulkRequest request)
+        {
+            if (InTransaction())
+            {
+                Transaction.Current.EnlistVolatile(this, EnlistmentOptions.None);
+                return new BulkWithBulkRequestAsyncAction(request)
+                    .AddToActions(AsyncActions)
+                    .TestWithInMemoryClient(_inMemoryClient);
+            }
+            return _client.BulkAsync(request);
+        }
+
+        public Task<IBulkResponse> BulkAsync(Func<BulkDescriptor, IBulkRequest> selector = null)
+        {
+            if (InTransaction())
+            {
+                Transaction.Current.EnlistVolatile(this, EnlistmentOptions.None);
+                return new BulkWithBulkDescriptorAsyncAction(selector)
+                    .AddToActions(AsyncActions)
+                    .TestWithInMemoryClient(_inMemoryClient);
+            }
+            return _client.BulkAsync(selector);
+        }
+
         public void Prepare(PreparingEnlistment preparingEnlistment)
         {
             if (!IsMinimumClusterHealthStatusAchieved())
@@ -114,20 +191,30 @@ namespace Elastic.Transactions
             }
 
             Actions.ForEach(action => action.Prepare(_client));
+            AsyncActions.ForEach(action => action.Prepare(_client));
 
             preparingEnlistment.Prepared();
         }
 
         public void Commit(Enlistment enlistment)
         {
-            var allActionsSucceeded = Actions
+            var allSyncActionsSucceeded = Actions
                 .Select(action => action.Commit(_client).IsValid)
                 .FirstOrDefault(result => result == false);
-            if (!allActionsSucceeded)
+            var allAsyncTasks = AsyncActions
+                .Select(action => action.Commit(_client));
+            AsyncPump.Run(() => Task.WhenAll(allAsyncTasks)); //TODO review me: Is this ok? See https://github.com/danielmarbach/AsyncTransactions/blob/master/AsyncTransactions/AsynchronousBlockingResourceManager.cs
+            var allAsyncActionsSucceeded = allAsyncTasks
+                .Select(action => action.Result.IsValid)
+                .FirstOrDefault(result => result == false);
+
+            if (!allSyncActionsSucceeded || !allAsyncActionsSucceeded)
             {
                 //todo? Log? Throw exception
             }
             Actions.Clear();
+            AsyncActions.Clear();
+            enlistment.Done();
         }
 
         public void Rollback(Enlistment enlistment)

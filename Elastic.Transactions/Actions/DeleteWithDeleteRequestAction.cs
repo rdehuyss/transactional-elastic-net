@@ -1,4 +1,6 @@
-﻿using Nest;
+﻿using System.Threading.Tasks;
+using Elastic.Transactions.Infrastructure;
+using Nest;
 
 namespace Elastic.Transactions.Actions
 {
@@ -24,6 +26,31 @@ namespace Elastic.Transactions.Actions
         private IDeleteResponse Delete(ElasticClient client)
         {
             return client.Delete(_indexRequest);
+        }
+    }
+
+    public class DeleteWithDeleteRequestAsyncAction : AbstractTransactionableAsyncAction<DeleteWithDeleteRequestAsyncAction>
+    {
+        private readonly IDeleteRequest _indexRequest;
+
+        public DeleteWithDeleteRequestAsyncAction(IDeleteRequest indexRequest)
+        {
+            _indexRequest = indexRequest;
+        }
+
+        public override Task<IResponse> Commit(ElasticClient client)
+        {
+            return Delete(client).Then(r => (IResponse)r);
+        }
+
+        public Task<IDeleteResponse> TestWithInMemoryClient(ElasticClient inMemoryClient)
+        {
+            return Delete(inMemoryClient);
+        }
+
+        private Task<IDeleteResponse> Delete(ElasticClient client)
+        {
+            return client.DeleteAsync(_indexRequest);
         }
     }
 }

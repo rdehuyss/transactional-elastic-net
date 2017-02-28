@@ -1,4 +1,5 @@
-﻿using Nest;
+﻿using System.Threading.Tasks;
+using Nest;
 
 namespace Elastic.Transactions.Actions
 {
@@ -7,6 +8,15 @@ namespace Elastic.Transactions.Actions
         void Prepare(ElasticClient client);
 
         IResponse Commit(ElasticClient client);
+
+        void Rollback(ElasticClient client);
+    }
+
+    public interface ITransactionableAsyncAction
+    {
+        void Prepare(ElasticClient client);
+
+        Task<IResponse> Commit(ElasticClient client);
 
         void Rollback(ElasticClient client);
     }

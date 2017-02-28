@@ -56,11 +56,13 @@
     <Compile Include="Actions\AbstractTransactionableAction.cs" />
     <Compile Include="Actions\BulkWithBulkDescriptorAction.cs" />
     <Compile Include="Actions\BulkWithBulkRequestAction.cs" />
-    <Compile Include="Actions\DeleteObjectAction.cs" />
+    <Compile Include="Actions\DeleteWithDeleteDescriptorAction.cs" />
     <Compile Include="Actions\DeleteWithDeleteRequestAction.cs" />
-    <Compile Include="Actions\IndexObjectAction.cs" />
+    <Compile Include="Actions\IndexWithIndexDescriptorAction.cs" />
     <Compile Include="Actions\IndexWithIndexRequestAction.cs" />
     <Compile Include="Actions\TransactionableAction.cs" />
+    <Compile Include="Actions\UpdateWithUpdateDescriptorAction.cs" />
+    <Compile Include="Actions\UpdateWithUpdateRequestAction.cs" />
     <Compile Include="Infrastructure\AsyncPump.cs" />
     <Compile Include="Infrastructure\TaskExtensions.cs" />
     <Compile Include="TransactionalElasticClient.cs" />

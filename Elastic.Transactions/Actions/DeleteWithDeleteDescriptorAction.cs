@@ -5,12 +5,12 @@ using Nest;
 
 namespace Elastic.Transactions.Actions
 {
-    public class DeleteObjectAction<T> : AbstractTransactionableAction<DeleteObjectAction<T>> where T : class
+    public class DeleteWithDeleteDescriptorAction<T> : AbstractTransactionableAction<DeleteWithDeleteDescriptorAction<T>> where T : class
     {
         private readonly DocumentPath<T> _document;
         private readonly Func<DeleteDescriptor<T>, IDeleteRequest> _selector;
 
-        public DeleteObjectAction(DocumentPath<T> document, Func<DeleteDescriptor<T>, IDeleteRequest> selector = null)
+        public DeleteWithDeleteDescriptorAction(DocumentPath<T> document, Func<DeleteDescriptor<T>, IDeleteRequest> selector = null)
         {
             _document = document;
             _selector = selector;

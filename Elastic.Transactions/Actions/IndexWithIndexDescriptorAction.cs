@@ -5,12 +5,12 @@ using Nest;
 
 namespace Elastic.Transactions.Actions
 {
-    public class IndexObjectAction<T> : AbstractTransactionableAction<IndexObjectAction<T>> where T : class
+    public class IndexWithIndexDescriptorAction<T> : AbstractTransactionableAction<IndexWithIndexDescriptorAction<T>> where T : class
     {
         private readonly T _theObject;
         private readonly Func<IndexDescriptor<T>, IIndexRequest> _selector;
 
-        public IndexObjectAction(T theObject, Func<IndexDescriptor<T>, IIndexRequest> selector = null)
+        public IndexWithIndexDescriptorAction(T theObject, Func<IndexDescriptor<T>, IIndexRequest> selector = null)
         {
             _theObject = theObject;
             _selector = selector;

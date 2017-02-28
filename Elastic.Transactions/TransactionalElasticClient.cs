@@ -43,7 +43,7 @@ namespace Elastic.Transactions
             if (InTransaction())
             {
                 Transaction.Current.EnlistVolatile(this, EnlistmentOptions.None);
-                return new IndexObjectAction<T>(theObject, selector)
+                return new IndexWithIndexDescriptorAction<T>(theObject, selector)
                     .AddToActions(Actions)
                     .TestWithInMemoryClient(_inMemoryClient);
             }
@@ -103,7 +103,7 @@ namespace Elastic.Transactions
             if (InTransaction())
             {
                 Transaction.Current.EnlistVolatile(this, EnlistmentOptions.None);
-                return new DeleteObjectAction<T>(document, selector)
+                return new DeleteWithDeleteDescriptorAction<T>(document, selector)
                     .AddToActions(Actions)
                     .TestWithInMemoryClient(_inMemoryClient);
             }
@@ -180,6 +180,54 @@ namespace Elastic.Transactions
                     .TestWithInMemoryClient(_inMemoryClient);
             }
             return _client.BulkAsync(selector);
+        }
+
+        public IUpdateResponse<TDocument> Update<TDocument>(DocumentPath<TDocument> documentPath, Func<UpdateDescriptor<TDocument, TDocument>, IUpdateRequest<TDocument, TDocument>> selector) where TDocument : class
+        {
+            if (InTransaction())
+            {
+                Transaction.Current.EnlistVolatile(this, EnlistmentOptions.None);
+                return new UpdateWithUpdateDescriptorAction<TDocument>(documentPath, selector)
+                    .AddToActions(Actions)
+                    .TestWithInMemoryClient(_inMemoryClient);
+            }
+            return _client.Update<TDocument>(documentPath, selector);
+        }
+
+        public IUpdateResponse<TDocument> Update<TDocument>(IUpdateRequest<TDocument, TDocument> request) where TDocument : class
+        {
+            if (InTransaction())
+            {
+                Transaction.Current.EnlistVolatile(this, EnlistmentOptions.None);
+                return new UpdateWithUpdateRequestAction<TDocument>(request)
+                    .AddToActions(Actions)
+                    .TestWithInMemoryClient(_inMemoryClient);
+            }
+            return _client.Update<TDocument>(request);
+        }
+
+        public Task<IUpdateResponse<TDocument>> UpdateAsync<TDocument>(DocumentPath<TDocument> documentPath, Func<UpdateDescriptor<TDocument, TDocument>, IUpdateRequest<TDocument, TDocument>> selector) where TDocument : class
+        {
+            if (InTransaction())
+            {
+                Transaction.Current.EnlistVolatile(this, EnlistmentOptions.None);
+                return new UpdateWithUpdateDescriptorAsyncAction<TDocument>(documentPath, selector)
+                    .AddToActions(AsyncActions)
+                    .TestWithInMemoryClient(_inMemoryClient);
+            }
+            return _client.UpdateAsync<TDocument>(documentPath, selector);
+        }
+
+        public Task<IUpdateResponse<TDocument>> UpdateAsync<TDocument>(IUpdateRequest<TDocument, TDocument> request) where TDocument : class
+        {
+            if (InTransaction())
+            {
+                Transaction.Current.EnlistVolatile(this, EnlistmentOptions.None);
+                return new UpdateWithUpdateRequestAsyncAction<TDocument>(request)
+                    .AddToActions(AsyncActions)
+                    .TestWithInMemoryClient(_inMemoryClient);
+            }
+            return _client.UpdateAsync<TDocument>(request);
         }
 
         public void Prepare(PreparingEnlistment preparingEnlistment)

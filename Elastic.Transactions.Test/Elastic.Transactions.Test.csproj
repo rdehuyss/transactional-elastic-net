@@ -95,6 +95,7 @@
     <Compile Include="TransactionalElasticClientIndexIntegrationTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="TransactionalElasticClientIntegrationTest.cs" />
+    <Compile Include="TransactionalElasticClientUpdateIntegrationTest.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Elastic.Transactions\Elastic.Transactions.csproj">
